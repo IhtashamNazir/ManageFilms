@@ -9,12 +9,10 @@ import { TokensSchema, Tokens } from './schemas/tokens.schema';
 import { FilmsSchema, Films } from './schemas/films.schema';
 
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MailModule } from './mail/mail.module';
 
 import { AgendaModule } from '@sigmaott/nestjs-agenda';
 
 import { AuthController } from './controllers/auth.controller';
-import { MailService } from './mail/mail.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ElasticsearchModule } from '@nestjs/elasticsearch';
 import { FilmService } from './services/film.service';
@@ -70,9 +68,8 @@ import { Ratings, RatingsSchema } from './schemas/rating.schema';
       inject: [ConfigService],
     }),
     HttpModule,
-    MailModule,
   ],
   controllers: [AuthController, FilmController],
-  providers: [UserService, MailService, FilmService, FilmsSearchService],
+  providers: [UserService, FilmService, FilmsSearchService],
 })
 export class UserModule {}
