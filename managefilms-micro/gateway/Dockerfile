@@ -1,0 +1,10 @@
+FROM node:16-alpine
+
+RUN mkdir -p /var/www/gateway
+WORKDIR /var/www/gateway
+ADD . /var/www/gateway
+RUN yarn config set network-timeout 600000 -g
+RUN yarn install
+EXPOSE 8000
+RUN yarn install
+CMD [ "yarn", "start:dev" ]

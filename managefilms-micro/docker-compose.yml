@@ -1,0 +1,43 @@
+version: '3.8'
+services:
+  gateway:
+    build: ./gateway
+    command: ['yarn', 'start:dev']
+    restart: always
+    hostname: gateway
+    volumes:
+      - ./gateway:/var/www/gateway
+      - /var/www/gateway/node_modules
+    env_file:
+      - .env
+    ports:
+      - '8000:8000'
+    depends_on:
+      - rabitmq
+  useraccount:
+    build: ./userAccount
+    command: ['yarn', 'start:dev']
+    restart: always
+    hostname: userAccount
+    volumes:
+      - ./userAccount:/var/www/userAccount
+      - /var/www/userAccount/node_modules
+    env_file:
+      - .env
+    depends_on:
+      - rabitmq
+  elasticsearch:
+    image: elasticsearch:8.8.0
+    ports:
+      - 9200:9200
+      - 9300:9300
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+  rabitmq:
+    image: rabbitmq:3-management
+    restart: always
+    hostname: rabbitmq
+    ports:
+      - '5672:5672'
+      - '15672:15672'

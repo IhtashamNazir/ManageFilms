@@ -1,0 +1,8 @@
+FROM node:16-alpine
+
+RUN mkdir -p /var/www/userAccount
+WORKDIR /var/www/userAccount
+ADD . /var/www/userAccount
+RUN yarn config set network-timeout 600000 -g
+RUN yarn install
+CMD [ "yarn", "start:dev" ]
