@@ -20,6 +20,7 @@ import { ElasticsearchModule } from '@nestjs/elasticsearch';
 import { FilmService } from './services/film.service';
 import FilmsSearchService from './services/elasticsearch.service';
 import { FilmController } from './controllers/film.controller';
+import { Ratings, RatingsSchema } from './schemas/rating.schema';
 
 @Module({
   imports: [
@@ -50,6 +51,11 @@ import { FilmController } from './controllers/film.controller';
         name: Films.name,
         schema: FilmsSchema,
         collection: 'films',
+      },
+      {
+        name: Ratings.name,
+        schema: RatingsSchema,
+        collection: 'ratings',
       },
     ]),
     ElasticsearchModule.registerAsync({

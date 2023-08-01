@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { sign } from 'jsonwebtoken';
+import { sign, verify } from 'jsonwebtoken';
 import { Model } from 'mongoose';
 import { hash, compare, genSalt } from 'bcrypt';
 import { errorResponse, successResponse } from '../constants/response';
@@ -14,6 +14,7 @@ import { IUserCognito } from '../interfaces/dto/user-cognito.interface';
 import { Users, UsersModel } from '../schemas/user.schema';
 import { Tokens } from '../schemas/tokens.schema';
 import { IUserLoginCognito } from 'src/interfaces/dto/user-login-cognito.interface';
+import { DataStoredInToken } from 'src/interfaces/dto/index.dto';
 @Injectable()
 export class UserService {
   constructor(
@@ -46,12 +47,12 @@ export class UserService {
       console.log(emailCheck);
       if (emailCheck > 0)
         return errorResponse(`This email ${user.email} already exists`);
-      const salt = await genSalt(SALTS);
+      const salt = await genSalt(Number(SALTS) | 10);
       const hashedPassword = await hash(user.password, salt);
       const userObj: any = {
         ...user,
         passwordHash: hashedPassword,
-        passwordRound: SALTS,
+        passwordRound: Number(SALTS) | 10,
         passwordSalt: salt,
       };
       const newUser = new this.userModel(userObj);
@@ -97,6 +98,7 @@ export class UserService {
   public async login(userData: IUserLoginCognito): Promise<any> {
     const findUser = await this.userModel.findOne({ email: userData.email });
     if (!findUser) return errorResponse(`Incorrect email or password`);
+    console.log(findUser, 'findUser');
 
     const isPasswordMatching: boolean = await compare(
       userData.password,
@@ -106,27 +108,31 @@ export class UserService {
       return errorResponse(`Incorrect email or password`);
 
     const tokenData = this.createToken(findUser, 'local');
+    const refrenceToken = await hash(tokenData.token, 10);
     const createdToken = await this.tokenModel.create({
-      token: tokenData.token,
+      token: refrenceToken,
       tokenType: 'access_token',
       data: tokenData.token,
     });
 
     tokenData.token = createdToken.token;
     if (tokenData.refreshToken) {
+      const refrenceRefreshToken = await hash(tokenData.refreshToken, 10);
       const createdRefreshToken = await this.tokenModel.create({
-        token: tokenData.refreshToken,
+        token: refrenceRefreshToken,
         tokenType: 'refresh_token',
         data: tokenData.refreshToken,
         linkedToken: createdToken.id,
       });
       tokenData.refreshToken = createdRefreshToken.token;
     }
+    console.log(tokenData, 'tokenData');
+
     return tokenData;
   }
 
   private createToken(user, loginType = 'local') {
-    const dataStoredInToken = {
+    const dataStoredInToken: DataStoredInToken = {
       id: user._id,
       name: user.firstName + ' ' + user.lastName,
       username: user.username,
@@ -156,5 +162,29 @@ export class UserService {
   ): Promise<string> {
     await this.tokenModel.remove({ token: token, tokenType: tokenType });
     return 'Loggedout successfully';
+  }
+
+  public async varifyToken(token: string) {
+    const secretKey: string = SECRET_KEY;
+    const tokenData = await this.tokenModel.findOne({
+      token,
+      tokenType: 'access_token',
+    });
+    if (!tokenData) return errorResponse(`Invalid Token`);
+    const data = tokenData.data;
+    try {
+      const verificationResponse: DataStoredInToken = (await verify(
+        data,
+        secretKey,
+      )) as DataStoredInToken;
+
+      const userId = verificationResponse.id;
+      const findUser = await this.userModel.findById(userId);
+      if (!findUser) return errorResponse(`User not found`);
+      return findUser;
+    } catch (e) {
+      console.log(e);
+      return errorResponse(e.message);
+    }
   }
 }

@@ -11,4 +11,9 @@ export class FilmController {
   async createFilm(film: IFilms): Promise<any> {
     return this.filmService.create(film);
   }
+
+  @MessagePattern('search_film')
+  async searchFilm(query: string): Promise<any> {
+    return this.filmService.search(query);
+  }
 }

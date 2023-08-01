@@ -21,18 +21,10 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    let isAuthorized = true;
-
     const secured = this.reflector.get<string[]>(
       'secured',
       context.getHandler(),
     );
-
-    const authorizedRole = this.reflector.get<string[]>(
-      'role',
-      context.getHandler(),
-    );
-
     if (!secured) {
       return true;
     }
@@ -54,8 +46,9 @@ export class AuthGuard implements CanActivate {
         token: authorization?.split(' ')?.[1],
       }),
     );
+    console.log(userTokenInfo);
 
-    if (!userTokenInfo || !userTokenInfo.data) {
+    if (!userTokenInfo) {
       throw new HttpException(
         {
           message: userTokenInfo.message,
@@ -65,27 +58,7 @@ export class AuthGuard implements CanActivate {
         HttpStatus.UNAUTHORIZED,
       );
     }
-    if (authorizedRole && authorizedRole.length) {
-      isAuthorized = false;
-
-      const authorizedRoleData = authorizedRole.some(
-        (ar) => ar === userTokenInfo?.data?.roles,
-      );
-      if (authorizedRoleData) {
-        isAuthorized = true;
-      }
-      if (isAuthorized == false) {
-        throw new HttpException(
-          {
-            message: 'User is not authorized to access this service',
-          },
-          HttpStatus.UNAUTHORIZED,
-        );
-      }
-    }
-
-    request.tokenData = userTokenInfo.data;
-
+    request.tokenData = userTokenInfo;
     return true;
   }
 }

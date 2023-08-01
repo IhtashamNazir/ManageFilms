@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import {
   IFilms,
+  RateFilmDto,
   // FilmBody,
   // FilmResult,
 } from '../interfaces/films/index.interface';
@@ -9,6 +10,7 @@ import {
 @Injectable()
 export default class FilmsSearchService {
   index = 'films';
+  rateIndex = 'rate';
 
   constructor(private readonly elasticsearchService: ElasticsearchService) {}
 
@@ -19,20 +21,29 @@ export default class FilmsSearchService {
     });
   }
 
-  async search(text: string) {
-    const result = await this.elasticsearchService.search({
-      index: this.index,
+  async indexRatePost(rating: RateFilmDto) {
+    return this.elasticsearchService.index({
+      index: this.rateIndex,
+      body: { ...rating },
+    });
+  }
+
+  async search(text: any) {
+    const searchQuery = {
+      index: 'films',
       body: {
         query: {
-          multi_match: {
-            query: text,
-            fields: ['name', 'description'],
+          match: {
+            name: text.search,
           },
         },
       },
-    });
+    };
+    const result = await this.elasticsearchService.search(searchQuery);
+    console.log(result.hits);
+
     const body = result['hits'];
     const hits = body.hits;
-    return hits.map((item) => item._source);
+    return hits.map((item: any) => item._source._doc);
   }
 }

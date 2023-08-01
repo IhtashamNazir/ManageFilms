@@ -1,7 +1,8 @@
-import { Document } from 'mongoose';
+import mongoose, { Document } from 'mongoose';
 
 export interface IFilms extends Document {
   name: string;
+  userId: mongoose.Schema.Types.ObjectId;
   description: string;
   releaseDate: Date;
   country?: string;
@@ -28,4 +29,11 @@ export interface FilmResult {
       _source: FilmBody;
     }>;
   };
+}
+
+export interface RateFilmDto {
+  filmId?: string | object;
+  rate: number;
+  comment?: string;
+  userId: string | object;
 }
