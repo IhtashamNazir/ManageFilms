@@ -9,6 +9,8 @@ NestJS task to manage films and search on them
 
   Free Port 8000 and 9200
 
+  .env file and paste all the variables in the file from email.
+
 # To Run
 
   cd managefilms-micro
